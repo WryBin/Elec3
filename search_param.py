@@ -30,34 +30,32 @@ train_data = train_data.merge(wind, on=['Day', 'Hour'], how='left')
 sunshine1 = sunshine.iloc[0:150, :]
 sunshine1['Day'] = sunshine1['Day'].map(lambda x: x + 300)
 
-val_data = sunshine1.merge(temp, on=['Day', 'Hour'], how='left')
+# val_data = sunshine1.merge(temp, on=['Day', 'Hour'], how='left')
+# val_data = val_data.merge(wind, on=['Day', 'Hour'], how='left')
+
+val_data = sunshine[4350:].merge(temp, on=['Day', 'Hour'], how='left')
 val_data = val_data.merge(wind, on=['Day', 'Hour'], how='left')
 
 features = [f for f in train_data.columns if f not in ['Radiation', 'Day']]
-X_train, X_test, Y_train, Y_test = train_test_split(train_data[features], train_data['Radiation'].values, test_size=0.1, random_state=42)
 
 params = {
     'task': 'train', 
     'boosting': 'gbdt',
     'objective': 'regression',
-    'num_leaves': args.num_leaves,
+    'num_leaves': args.num_leaves, 
     'learning_rate': args.learning_rate,
     'metric': {'mse'},
     'verbose': -1,
     'min_data_in_leaf': args.min_data_in_leaf,
-    'max_depth': args.max_depth
+    'max_depth':args.max_depth
 }
 
-lgb_train = lgb.Dataset(X_train, Y_train)
-lgb_eval = lgb.Dataset(X_test, Y_test, reference=lgb_train)
-
+lgb_train = lgb.Dataset(train_data[features], train_data['Radiation'].values)
 # train
-gbm = lgb.train(params,
-                train_set=lgb_train,
-                valid_sets=lgb_eval,
-                callbacks=[lgb.early_stopping(stopping_rounds=30)])
-                
-Y_pred = gbm.predict(X_test)
-mse = mean_squared_error(Y_test, Y_pred)
+gbm = lgb.cv(params,
+             train_set=lgb_train,
+             stratified=False, 
+             callbacks=[lgb.early_stopping(stopping_rounds=30)])
 
-wandb.log({"mse": mse})
+
+wandb.log({"mse": gbm['l2-mean'][-1]})
