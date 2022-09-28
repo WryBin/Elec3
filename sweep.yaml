@@ -1,17 +1,20 @@
 program: search_param.py
 method: grid
 metric:
-  name: rmse_sum
+  name: mse
   goal: minimize
 parameters:
   # learning_rate:
   #   min: 0.05
   #   max: 2.0
   num_leaves:
-    values: [11, 12, 13, 14, 15, 17, 19, 20]
+      values: [23, 25, 27, 30, 32, 35, 37, 39, 41, 52, 55]
   min_data_in_leaf:
-    values: [3, 4, 5, 6, 7]
+    # values: [3, 4, 5, 6, 7]
+      values: [5]
   max_depth:
-    values: [3, 4, 5]
+      values: [5, 6, 7, 8, 9, 10]
   learning_rate:
-    values: [0.05, 0.1]
+      values: [0.05, 0.07]
+  objective:
+      values: ['regression', 'huber', 'fair']
